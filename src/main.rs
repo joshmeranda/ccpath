@@ -136,7 +136,11 @@ fn main() {
         };
 
         if !is_dry_run {
-            // todo: create new parent directories is full path is converted
+            let parent = new_path.parent();
+            if parent.is_some() && parent.unwrap().exists() {
+                fs::create_dir_all(parent.unwrap());
+            }
+
             if let Err(err) = fs::rename(path, new_path.to_path_buf()) {
                 eprintln!("Error: {}", err);
             }
