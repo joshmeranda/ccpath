@@ -4,6 +4,7 @@ use std::path::{Component, Path, PathBuf};
 use convert_case::{Case, Casing};
 
 use crate::error::PathConvertError;
+use std::convert::TryFrom;
 
 /// Describes the supported file naming conventions.
 ///
@@ -56,6 +57,27 @@ impl From<Convention> for Case {
     }
 }
 
+impl TryFrom<&str> for Convention {
+    type Error = String;
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        match s {
+            "title" => Ok(Convention::TitleCase),
+            "flat" => Ok(Convention::FlatCase),
+            "FLAT" => Ok(Convention::UpperFlatCase),
+            "camel" => Ok(Convention::CamelCase),
+            "CAMEL" => Ok(Convention::UpperCamelCase),
+            "snake" => Ok(Convention::SnakeCase),
+            "SNAKE" => Ok(Convention::UpperSnakeCase),
+            "kebab" => Ok(Convention::KebabCase),
+            _ => Err(format!(
+                "Unsupported naming convention '{}'",
+                <str as AsRef<str>>::as_ref(s)
+            )),
+        }
+    }
+}
+
 /// Convert a component of a path into the desired case.
 fn convert_component(
     component: &OsStr,
@@ -78,11 +100,15 @@ fn convert_component(
         Ok(String::from(ext.unwrap().to_str().unwrap()))
     } else {
         let new_stem = if from_convention.is_some() {
-            stem.unwrap().to_str().unwrap()
+            stem.unwrap()
+                .to_str()
+                .unwrap()
                 .from_case(from_convention.unwrap().into())
                 .to_case(to_convention.into())
         } else {
-            stem.unwrap().to_str().unwrap()
+            stem.unwrap()
+                .to_str()
+                .unwrap()
                 .to_case(to_convention.into())
         };
 
@@ -141,7 +167,7 @@ pub fn convert_full<P: AsRef<Path>>(
                     };
 
                 converted_path.push(converted_component);
-            },
+            }
             _ => converted_path.push(component),
         }
     }

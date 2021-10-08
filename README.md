@@ -1,2 +1,2 @@
 # ccpath
-Rename file  to conform to a given naming convention
+Rename files to conform to a given naming convention

@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
-// todo: consider a "no change" option
+// todo: add reference to the malformed path
 pub enum PathConvertError {
     InvalidUtf8Path,
     InvalidPath,
