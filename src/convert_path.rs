@@ -136,16 +136,13 @@ pub fn convert_basename<P: AsRef<Path>>(
     if parent.is_none() || basename.is_none() {
         Ok(path.as_ref().to_path_buf())
     } else {
-        match convert_component(basename.unwrap(), from_convention, to_convention) {
-            Ok(base) => {
-                let mut path = path.as_ref().to_path_buf();
-                path.pop();
-                path.push(base);
+        let base = convert_component(basename.unwrap(), from_convention, to_convention)?;
 
-                Ok(path)
-            }
-            Err(err) => Err(err),
-        }
+        let mut path = path.as_ref().to_path_buf();
+        path.pop();
+        path.push(base);
+
+        Ok(path)
     }
 }
 
@@ -160,11 +157,7 @@ pub fn convert_full<P: AsRef<Path>>(
     for component in path.as_ref().components() {
         match component {
             Component::Normal(path) => {
-                let converted_component: String =
-                    match convert_component(path, from_convention, to_convention) {
-                        Ok(s) => s,
-                        Err(err) => return Err(err),
-                    };
+                let converted_component: String = convert_component(path, from_convention, to_convention)?;
 
                 converted_path.push(converted_component);
             }

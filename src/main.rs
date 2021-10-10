@@ -1,19 +1,18 @@
 #[macro_use]
 extern crate clap;
 
-use crate::convert_path::{convert_full, Convention};
-use crate::error::PathConvertError;
-use clap::Arg;
-use std::convert::TryFrom;
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::exit;
-
 mod convert_path;
 mod error;
 
-// todo: convert full path (relative and absolute)
-// todo: convert just the basename
+use std::convert::TryFrom;
+use std::fs;
+use std::path::Path;
+use std::process::exit;
+
+use clap::{Arg, ArgGroup};
+
+use crate::convert_path::Convention;
+
 // todo: handle overwriting a file
 fn main() {
     let matches = app_from_crate!()
@@ -37,20 +36,18 @@ fn main() {
         .arg(
             Arg::with_name("basename")
                 .help("only convert the basename of each given path")
-                .conflicts_with("full-path")
                 .short("b")
                 .long("basename"),
         )
         .arg(
             Arg::with_name("full-path")
                 .help("convert all components of the path")
-                .conflicts_with("full-path")
                 .short("F")
                 .long("full-path"),
         )
         .arg(
             Arg::with_name("from")
-                .help("set the current naming convention if it is known")
+                .help("set the current naming convention if it is known, this may improve teh case conversion accuracy")
                 .short("f")
                 .long("from")
                 .value_name("CONVENTION")
@@ -59,8 +56,6 @@ fn main() {
         .arg(
             Arg::with_name("into")
                 .help("set that target naming convention")
-                .short("i")
-                .long("into")
                 .value_name("CONVENTION")
                 .required(true)
                 .takes_value(true),
@@ -72,6 +67,7 @@ fn main() {
                 .required(true)
                 .takes_value(true),
         )
+        .group(ArgGroup::with_name("mode").args(&["basename", "full-path"]))
         .after_help("ccpath supports several naming conventions:\n  \
                     title  Title Case\n  \
                     flat   flatcase\n  \
@@ -138,7 +134,10 @@ fn main() {
         if !is_dry_run {
             let parent = new_path.parent();
             if parent.is_some() && parent.unwrap().exists() {
-                fs::create_dir_all(parent.unwrap());
+                if let Err(err) = fs::create_dir_all(parent.unwrap()) {
+                    eprintln!("Error: {}", err);
+                    exit(4);
+                }
             }
 
             if let Err(err) = fs::rename(path, new_path.to_path_buf()) {
