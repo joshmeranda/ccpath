@@ -16,12 +16,18 @@ use crate::convert_path::Convention;
 // todo: handle overwriting a file
 fn main() {
     let matches = app_from_crate!()
-        .arg(
-            Arg::with_name("recursive")
-                .help("recurse into a directory")
-                .short("r")
-                .long("recursive"),
-        )
+        // .arg(
+        //     Arg::with_name("recursive")
+        //         .help("recurse into a directory")
+        //         .short("r")
+        //         .long("recursive"),
+        // )
+        // .arg(
+        //         Arg::with_name("no-clobber")
+        //             .help("do not overwrite an existing file")
+        //             .short("n")
+        //             .long("no-clobber"),
+        // )
         .arg(
             Arg::with_name("dry-run")
                 .help("show the operations that would be performed without doing them")
@@ -110,18 +116,24 @@ fn main() {
         }
     };
 
+    // ensure that all specified paths exist
     let paths: Vec<&Path> = matches
         .values_of("paths")
         .unwrap()
-        .map(|v| Path::new(v))
+        .map(|v| {
+            let path = Path::new(v);
+
+            // ensure that the path exists, and exit if it does not
+            if ! path.exists() {
+                eprintln!("Error: no such file or directory '{}'", path.display());
+                exit(2);
+            }
+
+            path
+        })
         .collect();
 
     for path in paths {
-        if !path.exists() {
-            eprintln!("Error: no such file or directory '{}'", path.display());
-            exit(2);
-        }
-
         // todo: move this check outside loop
         //       store method or closure reference outside loop or run separate loops
         let result = if matches.is_present("full-path") {
@@ -150,8 +162,6 @@ fn main() {
                     eprintln!("Error: {}", err);
                     exit(4);
                 }
-
-                println!("=== 100 '{}' : {} ===", parent.unwrap().display(), parent.unwrap().exists());
             }
 
             if let Err(err) = fs::rename(path, new_path.to_path_buf()) {

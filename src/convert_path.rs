@@ -244,8 +244,6 @@ pub fn convert_full_except_prefix<P: AsRef<Path>, Q: AsRef<Path>>(
     let base = path.as_ref();
 
     if base.starts_with(prefix) {
-        println!("=== 000 ===");
-
         let new_base = convert_full(base.strip_prefix(prefix).unwrap(), from_convention, to_convention);
 
         if new_base.is_ok() {
@@ -254,8 +252,6 @@ pub fn convert_full_except_prefix<P: AsRef<Path>, Q: AsRef<Path>>(
             new_base
         }
     } else {
-        println!("=== 001 ===");
-
         convert_full(base, from_convention, to_convention)
     }
 }
