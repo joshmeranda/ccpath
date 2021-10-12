@@ -58,7 +58,13 @@ fn test_full_path() -> Result<(), Box<dyn std::error::Error>> {
         .join("some_child.txt");
 
     let mut cmd = Command::cargo_bin("ccpath")?;
-    cmd.args(&["--full-path", "--prefix", dir.path().to_str().unwrap(), "snake", target_path.to_str().unwrap()]);
+    cmd.args(&[
+        "--full-path",
+        "--prefix",
+        dir.path().to_str().unwrap(),
+        "snake",
+        target_path.to_str().unwrap(),
+    ]);
     cmd.assert().success();
 
     assert!(expected_path.exists());
@@ -79,7 +85,14 @@ fn test_full_with_parents_pre_exist() -> Result<(), Box<dyn std::error::Error>> 
         .join("some_child.txt");
 
     let mut cmd = Command::cargo_bin("ccpath")?;
-    cmd.args(&["--verbose", "--full-path", "--prefix", dir.path().to_str().unwrap(), "snake", target_path.to_str().unwrap()]);
+    cmd.args(&[
+        "--verbose",
+        "--full-path",
+        "--prefix",
+        dir.path().to_str().unwrap(),
+        "snake",
+        target_path.to_str().unwrap(),
+    ]);
     cmd.assert().success();
 
     assert!(expected_path.exists());
@@ -100,7 +113,13 @@ fn test_full_with_parents_no_exist() -> Result<(), Box<dyn std::error::Error>> {
         .join("some_child.txt");
 
     let mut cmd = Command::cargo_bin("ccpath")?;
-    cmd.args(&["--verbose", "--full-path", "--prefix", dir.path().to_str().unwrap(), "snake", target_path.to_str().unwrap()]);
+    cmd.args(&[
+        "--full-path",
+        "--prefix",
+        dir.path().to_str().unwrap(),
+        "snake",
+        target_path.to_str().unwrap(),
+    ]);
     cmd.assert().success();
 
     assert!(expected_path.exists());
@@ -108,8 +127,63 @@ fn test_full_with_parents_no_exist() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-// #[test]
-// fn test_overwrite() -> Result<(), Box<dyn std::error::Error>> {}
+#[test]
+fn test_overwrite() -> Result<(), Box<dyn std::error::Error>> {
+    let target_path = Path::new("Some File.txt");
+    let existing_path = Path::new("some_file.txt");
+
+    let dir = setup(&[&target_path, existing_path], &[])?;
+
+    let target_path = dir.path().join(target_path);
+    let existing_path = dir.path().join(existing_path);
+
+    let mut cmd = Command::cargo_bin("ccpath")?;
+    cmd.args(&[
+        "--full-path",
+        "--prefix",
+        dir.path().to_str().unwrap(),
+        "snake",
+        target_path.to_str().unwrap(),
+    ]);
+    cmd.assert().success();
+
+    assert!(existing_path.exists());
+
+    Ok(())
+}
+
+#[test]
+fn test_overwrite_no_clobber() -> Result<(), Box<dyn std::error::Error>> {
+    let target_path = Path::new("Some File.txt");
+    let existing_path = Path::new("some_file.txt");
+
+    let dir = setup(&[&target_path, existing_path], &[])?;
+
+    let target_path = dir.path().join(target_path);
+    let existing_path = dir.path().join(existing_path);
+
+    let mut cmd = Command::cargo_bin("ccpath")?;
+    cmd.args(&[
+        "--verbose",
+        "--no-clobber",
+        "--full-path",
+        "--prefix",
+        dir.path().to_str().unwrap(),
+        "snake",
+        target_path.to_str().unwrap(),
+    ]);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains(format!(
+            "file '{}' already exists",
+            existing_path.display()
+        )));
+
+    assert!(target_path.exists());
+    assert!(existing_path.exists());
+
+    Ok(())
+}
 
 // #[test]
 // fn test_recursive() -> Result<(), Box<dyn std::error::Error>> {}

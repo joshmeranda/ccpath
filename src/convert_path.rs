@@ -187,7 +187,8 @@ pub fn convert_full<P: AsRef<Path>>(
     for component in path.as_ref().components() {
         match component {
             Component::Normal(path) => {
-                let converted_component: String = convert_component(path, from_convention, to_convention)?;
+                let converted_component: String =
+                    convert_component(path, from_convention, to_convention)?;
 
                 converted_path.push(converted_component);
             }
@@ -244,7 +245,11 @@ pub fn convert_full_except_prefix<P: AsRef<Path>, Q: AsRef<Path>>(
     let base = path.as_ref();
 
     if base.starts_with(prefix) {
-        let new_base = convert_full(base.strip_prefix(prefix).unwrap(), from_convention, to_convention);
+        let new_base = convert_full(
+            base.strip_prefix(prefix).unwrap(),
+            from_convention,
+            to_convention,
+        );
 
         if new_base.is_ok() {
             Ok(prefix.join(new_base.unwrap()))
@@ -260,7 +265,9 @@ pub fn convert_full_except_prefix<P: AsRef<Path>, Q: AsRef<Path>>(
 mod test {
     use std::ffi::OsStr;
 
-    use crate::convert_path::{convert_basename, convert_component, convert_full, Convention, convert_full_except_prefix};
+    use crate::convert_path::{
+        convert_basename, convert_component, convert_full, convert_full_except_prefix, Convention,
+    };
     use std::path::{Path, PathBuf};
 
     #[test]
@@ -345,7 +352,7 @@ mod test {
             Path::new("/some-path/prefix/and-a/child"),
             Path::new("/a/different/prefix"),
             None,
-            Convention::UpperSnakeCase
+            Convention::UpperSnakeCase,
         );
 
         assert_eq!(expected, actual);
@@ -359,7 +366,7 @@ mod test {
             Path::new("/some-path/prefix/and-a/child"),
             Path::new("/some-path/prefix"),
             None,
-            Convention::UpperSnakeCase
+            Convention::UpperSnakeCase,
         );
 
         assert_eq!(expected, actual);

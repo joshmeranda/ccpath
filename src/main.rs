@@ -13,7 +13,7 @@ use clap::{Arg, ArgGroup};
 
 use crate::convert_path::Convention;
 
-// todo: handle overwriting a file
+// todo: break this into smaller pieces
 fn main() {
     let matches = app_from_crate!()
         // .arg(
@@ -22,12 +22,12 @@ fn main() {
         //         .short("r")
         //         .long("recursive"),
         // )
-        // .arg(
-        //         Arg::with_name("no-clobber")
-        //             .help("do not overwrite an existing file")
-        //             .short("n")
-        //             .long("no-clobber"),
-        // )
+        .arg(
+                Arg::with_name("no-clobber")
+                    .help("do not overwrite an existing file")
+                    .short("n")
+                    .long("no-clobber"),
+        )
         .arg(
             Arg::with_name("dry-run")
                 .help("show the operations that would be performed without doing them")
@@ -95,6 +95,7 @@ fn main() {
 
     let is_verbose = matches.is_present("verbose");
     let is_dry_run = matches.is_present("dry-run");
+    let no_clobber = matches.is_present("no-clobber");
 
     let from_convention = if matches.is_present("from") {
         match Convention::try_from(matches.value_of("from").unwrap()) {
@@ -124,7 +125,7 @@ fn main() {
             let path = Path::new(v);
 
             // ensure that the path exists, and exit if it does not
-            if ! path.exists() {
+            if !path.exists() {
                 eprintln!("Error: no such file or directory '{}'", path.display());
                 exit(2);
             }
@@ -138,8 +139,13 @@ fn main() {
         //       store method or closure reference outside loop or run separate loops
         let result = if matches.is_present("full-path") {
             if matches.is_present("prefix") {
-                convert_path::convert_full_except_prefix(path, matches.value_of("prefix").unwrap(), from_convention, to_convention)
-            }else {
+                convert_path::convert_full_except_prefix(
+                    path,
+                    matches.value_of("prefix").unwrap(),
+                    from_convention,
+                    to_convention,
+                )
+            } else {
                 convert_path::convert_full(path, from_convention, to_convention)
             }
         } else {
@@ -155,9 +161,20 @@ fn main() {
         };
 
         if !is_dry_run {
-            let parent = new_path.parent();
-            if parent.is_some() && ! parent.unwrap().exists() {
+            // todo: this conditional block is UGLY
+            //       consider moving verbosity before everything with a check to avoid inaccurate verbosity logs
+            if new_path.exists() {
+                if is_verbose && no_clobber {
+                    println!("file '{}' already exists", new_path.display());
+                }
 
+                if no_clobber {
+                    continue;
+                }
+            }
+
+            let parent = new_path.parent();
+            if parent.is_some() && !parent.unwrap().exists() {
                 if let Err(err) = fs::create_dir_all(parent.unwrap()) {
                     eprintln!("Error: {}", err);
                     exit(4);
