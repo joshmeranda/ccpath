@@ -8,10 +8,12 @@ use std::convert::TryFrom;
 
 /// Describes the supported file naming conventions.
 ///
-/// Converting to and from some of these cases is "lossy" and you may lose information regarding word boundaries. In
-/// these cases, it will be impossible to revert to the original case once converted. Note that not all word boundaries
-/// are necessarily lost, especially since it is not always possible to determine if a number is the start of a word,
-/// the end of a word, or a word itself.
+/// Converting to and from some of these cases is "lossy" and you may
+/// lose information regarding word boundaries. In these cases, it will be
+/// impossible to revert to the original case once converted. Note that not all
+/// word boundaries are necessarily lost, especially since it is not always
+/// possible to determine if a number is the start of a word, the end of a
+/// word, or a word itself.
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub enum Convention {
     /// In title case convention describes strings where the first letter of each word is capitalized and spaces are
@@ -123,7 +125,21 @@ fn convert_component(
     }
 }
 
-/// Convert just the filename portion to the desired case.
+/// Convert just the filename portion to the desired convention.
+///
+/// # Examples
+/// ```
+/// # fn main() {
+/// let expected = Ok(PathBuf::from("/An Absolute/Path To/someFile.jpg"));
+///
+/// let actual = convert_basename(
+///     Path::new("/An Absolute/Path To/Some File.jpg"),
+///     None,
+///     Convention::CamelCase,
+/// );
+///
+/// assert_eq!(expected, actual)/// # }
+/// ```
 pub fn convert_basename<P: AsRef<Path>>(
     path: P,
     from_convention: Option<Convention>,
@@ -146,7 +162,21 @@ pub fn convert_basename<P: AsRef<Path>>(
     }
 }
 
-/// Convert the entire path  to the desired case.
+/// Convert the entire path to the desired convention.
+///
+/// # Examples
+/// ```
+/// # fn main() {
+/// let expected = Ok(PathBuf::from("/anAbsolute/pathTo/someFile.jpg"));
+///
+/// let actual = convert_basename(
+///     Path::new("/An Absolute/Path To/Some File.jpg"),
+///     None,
+///     Convention::CamelCase,
+/// );
+///
+/// assert_eq!(expected, actual)/// # }
+/// ```
 pub fn convert_full<P: AsRef<Path>>(
     path: P,
     from_convention: Option<Convention>,
@@ -168,11 +198,73 @@ pub fn convert_full<P: AsRef<Path>>(
     Ok(converted_path)
 }
 
+/// The same as convert_full except ignoring the given prefix when converting.
+///
+/// If the prefix is not present in teh given path, the result is the same as
+/// if `convert_full` was called instead.
+///
+/// todo examples will not be run until convert_path is added as a library
+///
+/// # Examples
+/// ```
+/// # fn main() {
+/// let path = Path::new("/some-absolute/path-to/a-file");
+///
+/// let from = None;
+/// let to = Convention::SnakeCase;
+///
+/// assert_eq!(
+///     Ok(PathBuf::from("/some_absolute/path_to/a_file"),
+///     convert_full_except_prefix(path, prefix, from, to)
+/// );
+/// # }
+/// ```
+///
+/// ```
+/// # fn main() {
+/// let path = Path::new("/some-absolute/path-to/a-file");
+/// let prefix = Path::new("/some/prefix");
+///
+/// let from = None;
+/// let to = Convention::SnakeCase;
+///
+/// assert_eq!(
+///     convert_full(path, from, to),
+///     convert_full_except_prefix(path, prefix, from, to)
+/// );
+/// # }
+/// ```
+pub fn convert_full_except_prefix<P: AsRef<Path>, Q: AsRef<Path>>(
+    path: P,
+    prefix: Q,
+    from_convention: Option<Convention>,
+    to_convention: Convention,
+) -> Result<PathBuf, PathConvertError> {
+    let prefix = prefix.as_ref();
+    let base = path.as_ref();
+
+    if base.starts_with(prefix) {
+        println!("=== 000 ===");
+
+        let new_base = convert_full(base.strip_prefix(prefix).unwrap(), from_convention, to_convention);
+
+        if new_base.is_ok() {
+            Ok(prefix.join(new_base.unwrap()))
+        } else {
+            new_base
+        }
+    } else {
+        println!("=== 001 ===");
+
+        convert_full(base, from_convention, to_convention)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::ffi::OsStr;
 
-    use crate::convert_path::{convert_basename, convert_component, convert_full, Convention};
+    use crate::convert_path::{convert_basename, convert_component, convert_full, Convention, convert_full_except_prefix};
     use std::path::{Path, PathBuf};
 
     #[test]
@@ -247,5 +339,33 @@ mod test {
         );
 
         assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn test_convert_except_prefix_no_prefix_match() {
+        let expected = Ok(PathBuf::from("/SOME_PATH/PREFIX/AND_A/CHILD"));
+
+        let actual = convert_full_except_prefix(
+            Path::new("/some-path/prefix/and-a/child"),
+            Path::new("/a/different/prefix"),
+            None,
+            Convention::UpperSnakeCase
+        );
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_convert_except_prefix_prefix_match() {
+        let expected = Ok(PathBuf::from("/some-path/prefix/AND_A/CHILD"));
+
+        let actual = convert_full_except_prefix(
+            Path::new("/some-path/prefix/and-a/child"),
+            Path::new("/some-path/prefix"),
+            None,
+            Convention::UpperSnakeCase
+        );
+
+        assert_eq!(expected, actual);
     }
 }

@@ -46,6 +46,13 @@ fn main() {
                 .long("full-path"),
         )
         .arg(
+            Arg::with_name("prefix")
+                .help("exclude a path prefix when converting a '--full-path' is specified, otherwise ignored'")
+                .short("P")
+                .long("prefix")
+                .takes_value(true)
+        )
+        .arg(
             Arg::with_name("from")
                 .help("set the current naming convention if it is known, this may improve teh case conversion accuracy")
                 .short("f")
@@ -118,7 +125,11 @@ fn main() {
         // todo: move this check outside loop
         //       store method or closure reference outside loop or run separate loops
         let result = if matches.is_present("full-path") {
-            convert_path::convert_full(path, from_convention, to_convention)
+            if matches.is_present("prefix") {
+                convert_path::convert_full_except_prefix(path, matches.value_of("prefix").unwrap(), from_convention, to_convention)
+            }else {
+                convert_path::convert_full(path, from_convention, to_convention)
+            }
         } else {
             convert_path::convert_basename(path, from_convention, to_convention)
         };
@@ -133,11 +144,14 @@ fn main() {
 
         if !is_dry_run {
             let parent = new_path.parent();
-            if parent.is_some() && parent.unwrap().exists() {
+            if parent.is_some() && ! parent.unwrap().exists() {
+
                 if let Err(err) = fs::create_dir_all(parent.unwrap()) {
                     eprintln!("Error: {}", err);
                     exit(4);
                 }
+
+                println!("=== 100 '{}' : {} ===", parent.unwrap().display(), parent.unwrap().exists());
             }
 
             if let Err(err) = fs::rename(path, new_path.to_path_buf()) {
