@@ -9,13 +9,12 @@ use std::fs;
 use std::path::Path;
 use std::process::exit;
 
-use clap::{Arg, ArgGroup};
+use clap::{Arg, ArgGroup, ArgMatches};
 
 use crate::convert_path::Convention;
 
-// todo: break this into smaller pieces
-fn main() {
-    let matches = app_from_crate!()
+fn get_matches<'a>() -> ArgMatches<'a> {
+    app_from_crate!()
         // .arg(
         //     Arg::with_name("recursive")
         //         .help("recurse into a directory")
@@ -23,10 +22,10 @@ fn main() {
         //         .long("recursive"),
         // )
         .arg(
-                Arg::with_name("no-clobber")
-                    .help("do not overwrite an existing file")
-                    .short("n")
-                    .long("no-clobber"),
+            Arg::with_name("no-clobber")
+                .help("do not overwrite an existing file")
+                .short("n")
+                .long("no-clobber"),
         )
         .arg(
             Arg::with_name("dry-run")
@@ -91,7 +90,12 @@ fn main() {
                     SNAKE  SNAKE_CASE\n  \
                     kebab  kebab-case\n"
         )
-        .get_matches();
+        .get_matches()
+}
+
+// todo: break this into smaller pieces
+fn main() {
+    let matches = get_matches();
 
     let is_verbose = matches.is_present("verbose");
     let is_dry_run = matches.is_present("dry-run");
