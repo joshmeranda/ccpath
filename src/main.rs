@@ -170,7 +170,6 @@ fn convert_recursive(
     Ok(())
 }
 
-// todo: break this into smaller pieces
 fn main() {
     let matches = get_matches();
 
