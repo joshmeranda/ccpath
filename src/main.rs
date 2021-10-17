@@ -1,19 +1,16 @@
 #[macro_use]
 extern crate clap;
 
-mod convert_path;
-mod error;
-
 use std::convert::TryFrom;
 use std::fs;
 use std::path::Path;
 use std::process::exit;
 
 use clap::{Arg, ArgGroup, ArgMatches};
-
-use crate::convert_path::Convention;
-use crate::error::PathConvertError;
 use walkdir::WalkDir;
+
+use convert_path::{self, Convention};
+use convert_path::error::PathConvertError;
 
 fn get_matches<'a>() -> ArgMatches<'a> {
     app_from_crate!()
@@ -118,8 +115,6 @@ fn convert_single(
     }?;
 
     if !is_dry_run {
-        // todo: this conditional block is ugly
-        //       consider moving verbosity before everything with a check to avoid inaccurate verbosity logs
         if new_path.exists() {
             if no_clobber {
                 if is_verbose {
@@ -184,7 +179,6 @@ fn main() {
     let no_clobber = matches.is_present("no-clobber");
     let is_recursive = matches.is_present("recursive");
 
-    // todo: if recursive set prefix and full-path
     let from_convention = if matches.is_present("from") {
         match Convention::try_from(matches.value_of("from").unwrap()) {
             Ok(c) => Some(c),

@@ -8,12 +8,19 @@ description = "Rename files to conform to a given naming convention"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 #[lib]
-#doctet = true
+#name = "convert_path"
+#path = "src/lib.rs"
+#doctest = true
+#
+#[[bin]]
+#name = "ccpath"
+#path = "src/main.rs"
 
 [dependencies]
 clap = "2.33"
 convert_case = "0.4.0"
 walkdir = "2.3.2"
+convert_path = { path = "convert_path" }
 
 [dev-dependencies]
 assert_cmd = "2.0.2"
