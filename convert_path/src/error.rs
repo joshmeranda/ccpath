@@ -1,21 +1,21 @@
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
-// todo: add reference to the malformed path
 pub enum PathConvertError {
-    InvalidUtf8Path,
-    InvalidPath,
+    InvalidUtf8Path(PathBuf),
+    InvalidPath(PathBuf),
 }
 
 impl Display for PathConvertError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            PathConvertError::InvalidUtf8Path => {
-                write!(f, "path contains invalid utf-8 characters")
+            PathConvertError::InvalidUtf8Path(path) => {
+                write!(f, "path contains invalid utf-8 characters: {}", path.to_string_lossy())
             }
-            PathConvertError::InvalidPath => {
-                write!(f, "paths must container either a stem or a path or both")
+            PathConvertError::InvalidPath(path) => {
+                write!(f, "paths must container either a stem or a path or both: '{}'", path.to_string_lossy())
             }
         }
     }

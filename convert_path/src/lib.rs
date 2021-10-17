@@ -92,14 +92,14 @@ fn convert_component(
 
     // allow remaining code to safely call 'OsStr::toStr' without checks for valid utf-8
     if path.to_str().is_none() {
-        return Err(PathConvertError::InvalidUtf8Path);
+        return Err(PathConvertError::InvalidUtf8Path(path.to_path_buf()));
     }
 
     let stem = path.file_stem();
     let ext = path.extension();
 
     if stem.is_none() && ext.is_none() {
-        Err(PathConvertError::InvalidPath)
+        Err(PathConvertError::InvalidPath(path.to_path_buf()))
     } else if stem.is_none() {
         Ok(String::from(ext.unwrap().to_str().unwrap()))
     } else {
@@ -242,7 +242,7 @@ pub fn convert_full_except_prefix<P: AsRef<Path>, Q: AsRef<Path>>(
     prefix: Q,
     from_convention: Option<Convention>,
     to_convention: Convention,
-) -> Result<PathBuf, PathConvertError> {
+) -> Result<PathBuf, PathConvertError>  {
     let prefix = prefix.as_ref();
     let base = path.as_ref();
 
